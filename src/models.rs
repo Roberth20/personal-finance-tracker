@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 /// # Category
 /// Those are the different categories supported
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Category {
     Food,
     Rent,
