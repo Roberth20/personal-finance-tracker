@@ -1,5 +1,6 @@
 //! # Data models
 //! This module holds data models of the project.
+use std::str::FromStr;
 
 /// # Category
 /// Those are the different categories supported
@@ -37,6 +38,34 @@ impl Transaction {
 
     pub fn get_category(&self) -> &Category {
         &self.category
+    }
+}
+
+/// Possible states of the workflow.
+#[derive(Debug, PartialEq)]
+pub enum FlowState {
+    Unknown,
+    AddTransaction,
+    CalculateTotal,
+    FilterCategory,
+    Exit,
+}
+
+impl FromStr for FlowState {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "0" => Ok(Self::Unknown),
+            "1" => Ok(Self::AddTransaction),
+            "2" => Ok(Self::CalculateTotal),
+            "3" => Ok(Self::FilterCategory),
+            "4" => Ok(Self::Exit),
+            _ => Err(format!(
+                "{} not a valid input. It must be one of (1, 2, 3, 4)",
+                s
+            )),
+        }
     }
 }
 
