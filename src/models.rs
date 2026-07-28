@@ -14,6 +14,22 @@ pub enum Category {
     Credit,
 }
 
+impl FromStr for Category {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "food" => Ok(Self::Food),
+            "rent" => Ok(Self::Rent),
+            "salary" => Ok(Self::Salary),
+            "services" => Ok(Self::Services),
+            "expenses" => Ok(Self::Expenses),
+            "credit" => Ok(Self::Credit),
+            _ => Err(format!("{} is not a valid category", s)),
+        }
+    }
+}
+
 /// # Transaction
 /// Data type with simple metadata
 pub struct Transaction {

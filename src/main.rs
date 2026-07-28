@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 use fin_track::models::{Category, FlowState, Transaction};
+use fin_track::parse_from_prompt;
 use fin_track::tools;
 use fin_track::tools::prompt;
 
@@ -15,23 +14,11 @@ fn main() {
         println!(
             "1) Add Transaction\t 2) Calculate total balance\t 3) Filter by category\t 4) Exit"
         );
-        let result = tools::prompt("# ");
-        match result {
-            Ok(option) => match FlowState::from_str(&option) {
-                Ok(state) => {
-                    action = state;
-                }
-                Err(err) => {
-                    eprintln!("There was an error parsing your input: '{}'", err);
-                    eprintln!("Try again.");
-                    action = FlowState::Unknown;
-                }
-            },
-            Err(err) => {
-                eprintln!("There was an error with your input '{}'", err);
-                eprintln!("Try again");
-                action = FlowState::Unknown
-            }
+
+        if let Some(state) = parse_from_prompt::<FlowState>() {
+            action = state;
+        } else {
+            action = FlowState::Unknown;
         }
 
         if action == FlowState::Exit {
@@ -39,11 +26,13 @@ fn main() {
             std::process::exit(0);
         }
         if action == FlowState::Unknown {
-            println!("Please, try to select an option again.")
+            println!("Please, try to select an option again.");
+            continue;
         }
 
         if action == FlowState::AddTransaction {
-            let item_raw = prompt("What is your item to log? # ");
+            println!("What is your item to log?");
+            let item_raw = prompt("# ");
             let Ok(item) = item_raw else {
                 eprintln!(
                     "There was an error reading your input: {}",
@@ -51,50 +40,27 @@ fn main() {
                 );
                 continue;
             };
-            let input_text = prompt("What is the total? # ");
-            let amount = match input_text {
-                Ok(amount_raw) => {
-                    let Ok(amount) = f64::from_str(&amount_raw) else {
-                        eprintln!("Could not convert {amount_raw} to float");
-                        continue;
-                    };
-                    amount.abs()
-                }
-                Err(m) => {
-                    eprintln!("There was an error reading yout input {}", m);
-                    continue;
-                }
-            };
 
             println!("What category do you assign?");
             println!("Food, Rent, Salary, Services, Expenses Credit");
-            let input_text = prompt("# ");
-            let category = match input_text {
-                Ok(category_raw) => match category_raw.to_lowercase().as_str() {
-                    "food" => Category::Food,
-                    "rent" => Category::Rent,
-                    "salary" => Category::Salary,
-                    "services" => Category::Services,
-                    "expenses" => Category::Expenses,
-                    "credit" => Category::Credit,
-                    _ => {
-                        eprintln!("{} is not a valid category", category_raw);
-                        continue;
-                    }
-                },
-                Err(m) => {
-                    eprintln!("There was an error reading yout input {}", m);
-                    continue;
-                }
+            let category = if let Some(category) = parse_from_prompt::<Category>() {
+                category
+            } else {
+                continue;
             };
 
-            if category != Category::Salary {
-                let transaction = Transaction::new(item, -amount, category);
-                tools::add_transaction(transaction, &mut transactions);
+            println!("What is the total?");
+            let amount = if let Some(amount) = parse_from_prompt::<f64>() {
+                if category != Category::Salary {
+                    -amount.abs()
+                } else {
+                    amount.abs()
+                }
             } else {
-                let transaction = Transaction::new(item, amount, category);
-                tools::add_transaction(transaction, &mut transactions);
-            }
+                continue;
+            };
+
+            tools::add_transaction(Transaction::new(item, amount, category), &mut transactions);
         }
 
         if action == FlowState::CalculateTotal {
@@ -102,6 +68,18 @@ fn main() {
                 "Your current total is: {}",
                 tools::calculate_total_balance(&transactions)
             );
+        }
+
+        if action == FlowState::FilterCategory {
+            println!("What category do you want to explore?");
+            println!("Food, Rent, Salary, Services, Expenses Credit");
+            let category = if let Some(category) = parse_from_prompt::<Category>() {
+                category
+            } else {
+                continue;
+            };
+
+            tools::filter_by_category(category, &transactions);
         }
     }
 }

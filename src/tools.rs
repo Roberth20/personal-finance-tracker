@@ -31,7 +31,7 @@ pub fn add_transaction(
 }
 
 /// Iterate over the transactions sum up the amounts.
-pub fn calculate_total_balance(transactions: &Vec<models::Transaction>) -> f64 {
+pub fn calculate_total_balance(transactions: &[models::Transaction]) -> f64 {
     transactions.iter().map(|t| t.get_amount()).sum()
 }
 
